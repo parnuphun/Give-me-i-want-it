@@ -1,0 +1,15 @@
+/* scroll bar */
+/* width */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #a1a1aa;
+    border-radius: 5px;
+}
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #71717a;
+}
