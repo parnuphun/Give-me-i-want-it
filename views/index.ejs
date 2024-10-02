@@ -172,7 +172,7 @@
                 },
             })
 
-            await fetch("http://127.0.0.1/api/startScrapingSteamReview", {
+            await fetch("http://localhost:3001/api/startScrapingSteamReview", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(
@@ -286,7 +286,7 @@
                 timerProgressBar:true 
             })
         }else{
-            await fetch("http://127.0.0.1:4020/api/exportSteamReviewToCSV", {
+            await fetch("http://localhost:3001/api/startScrapingSteamReview", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(
