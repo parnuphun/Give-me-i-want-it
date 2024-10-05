@@ -1,5 +1,5 @@
 <div style="text-align: center">
-   <h1>Scraping Steam Reviews</h1>
+   Scraping Steam Reviews
 </div>
 
 <div align="center">
