@@ -1,5 +1,7 @@
-<div style="text-align: center">
-   Scraping Steam Reviews
+ 
+ 
+<div align="center">
+   <h1>Scraping Steam Reviews</h1>
 </div>
 
 <div align="center">
