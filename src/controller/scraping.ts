@@ -124,14 +124,14 @@ export default async function scraping() {
             await waitForNewContent(previousHeight, page, timeout);
          } catch (error) {
             loop = false;
-            console.table(reviewsData);
+            console.log(reviewsData);
 
             break;
          }
          currentPage++;
       }
-
       await browser.close();
+      return reviewsData
    } catch (error: any) {
       if (error.message.includes("Target closed")) {
          console.error("ERROR : the page or browser was closed unexpectedly.");

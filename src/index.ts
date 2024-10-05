@@ -12,8 +12,15 @@ const port = 3001;
 // socket
 const io = new Server(server);
 io.on("connection", (socket) => {
-   console.log("user connected");
-   io.emit("chat message", "test socket");
+   console.log("user connected!!");
+
+   //
+   socket.on("start scraping",(url)=>{
+      scraping()
+   })
+
+   //
+   io.emit("client check", "client checked!!");
 });
 
 // default use
@@ -26,9 +33,6 @@ app.use("/api", scrapingRoute);
 app.get("/", (req, res) => {
    res.sendFile(path.join(__dirname, "index.html"));
 });
-
-// test function
-scraping()
 
 server.listen(port, () => {
    console.log("server running at port: ", port);
