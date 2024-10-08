@@ -2,7 +2,8 @@ import puppeteer from "puppeteer";
 import { Page, PuppeteerNode } from "puppeteer";
 import { SteamCards, UserStatus } from "../model/template";
 import { Review } from "../model/reviews";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
+import { ScraperParams } from "../model/reviews";
 
 /**
  * Flow การทำงานหลักๆ
@@ -21,18 +22,21 @@ let reviewsData: Review[] = [];
 let templateCaseName: SteamCards = "twoSmall"; // สำหรับเช็ค template แต่ละอันของแต่ละแถว checktemplate()
 let userStatus: UserStatus = "online"; // สำหรับเช็คสถานะผู้ใช้งานในการ์ดแต่ละใบด้วยฟังก์ชัน checkUserStatus() ใช้สำหรับดึงรูปภาพ
 let userCount: number = 1;
-let loop: boolean = true; // ประกาศไว้สำหรับ btnGate() เผื่อเอาไว้
+let socketCancelEvent: boolean = false // สำหรับการหยุดลูปเมื่อมีการกดยกเลิกมาจากทางฝั่ง client
+let noMoreData: boolean = false // สำหรับเช็คสถานะการปล่อย event success ของ scroll bar
 
-export default async function scraping(io:Server) {
-   const url: string = "https://steamcommunity.com/app/570/reviews/";
 
-   let limit: number = 50;
+export default async function scraping(socket:Socket , params:ScraperParams) {
+   socket.setMaxListeners(Number(params.limit));
+
+   const url: string = params.steamUrl
+   let limit: number = params.limit
    const timeout: number = 10000;
    try {
 
       // เปิด chromium ถ้าตั้ง headless = false
       const browser = await puppeteer.launch({
-         headless: true,
+         headless: params.headless,
          timeout: timeout,
       });
 
@@ -41,17 +45,23 @@ export default async function scraping(io:Server) {
       await page.setViewport({ width: 1080, height: 1024 });
 
       page.on("close", () => {
-         console.log("Page closed...");
+         if(noMoreData === false){
+            ScrapingSuccess(socket,'Scraping is complete.')
+         }
+         noMoreData = false
       });
 
       // สำหรับเกมที่มีการตรวจสอบอายุ บางเกมต้องกดปุ่มในหน้านั้นๆ
       await btnGate(page)
 
-      while (loop) {
+      while (true) {
          // ดึงจำนวนแถวในหน้าๆนั้น
          const totalRowsInPage = await getTotalRowsInPage(page);
          for (let row = 1; row <= totalRowsInPage; row++) {
             // ดึงจำนวนผู้ใช้งานในแถวนั้นๆ
+            if((userCount-1) >= limit){
+               break
+            }
             const totalUserInRow = await checkTemplate(page, row);
             for (let user = 1; user <= totalUserInRow; user++) {
                let review: Review = {
@@ -105,14 +115,29 @@ export default async function scraping(io:Server) {
 
                   console.log(`[${userCount}] user: ${review.name} , `);
 
-                  io.emit('data recieve',review)
+                  socket.emit('data recieve',review)
                   userCount++;
+                  if((userCount-1) >= limit){
+                     break
+                  }
                } catch (err) {
                   console.error(err);
-                  loop = false;
+
                   break;
                }
             }
+         }
+
+         // beak checker
+         // cancel event from client
+         socket.on('cancel scraping' ,(msg)=>{
+            console.log(msg);
+            socketCancelEvent = true
+         })
+
+         if(socketCancelEvent || (userCount-1) >= limit){
+            socket.removeAllListeners('cancel scraping');
+            break
          }
 
          // ฟังก์ชันสำหรับการเลื่อนหน้าจอลง ถ้าไม่มีหน้าต่อไปให้เลื่อนลงจนหมดเวลาก็ให้หยุดทำงาน
@@ -121,11 +146,14 @@ export default async function scraping(io:Server) {
             await scrollToBottom(page, timeout);
             await waitForNewContent(previousHeight, page, timeout);
          } catch (error) {
-            loop = false;
-            break;
+            noMoreData = true
+            ScrapingSuccess(socket,'There is no data left to scrape. Scraping is complete.')
+            socket.removeAllListeners('cancel scraping');
+            break
          }
          currentPage++;
       }
+      socketCancelEvent = false
       await browser.close();
       return reviewsData
    } catch (error: any) {
@@ -221,13 +249,17 @@ async function waitForNewContent(previousHeight: any, page: Page, timeout: numbe
 //*** */ ฟังก์ชันนี้ยังหลอนอยู่
 async function btnGate(page:Page){
    return page.$$eval(`#age_gate_btn_continue` , el => el.length).then(async (result)=>{
-       if(result === 0){
-           loop = true
-       }else {
-           const btnGate = await page.$('#age_gate_btn_continue')
-           if (btnGate) {
+      if(result !== 0){
+         const btnGate = await page.$('#age_gate_btn_continue')
+         if (btnGate) {
             await btnGate.click();
-        }
-       }
+         }
+      }
    })
+}
+
+async function ScrapingSuccess(socket:Socket,msg:string) {
+   userCount = 1;
+   reviewsData = []
+   socket.emit('scraping complete',msg)
 }

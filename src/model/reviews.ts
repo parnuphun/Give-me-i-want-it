@@ -9,3 +9,9 @@ export interface Review {
    review: string
 }
 
+export interface ScraperParams {
+   steamUrl: string,
+   headless: boolean,
+   limit: number
+}
+

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Scraping Steam Reviews</title>
+
+      <!-- css -->
+      <link href="/css/style.css" rel="stylesheet" />
+      <link href="/css/global.css" rel="stylesheet" />
+      <!-- font awesome -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+   </head>
+   <body>
+      <div class="w-full flex flex-col min-h-screen max-w-screen h-full bg-gray-200">
+         <div class="w-full h-[260px] pt-8 px-8 bg-prime-200">
+            <div
+               class="w-full h-full pt-8 py-4 px-8 flex flex-col bg-prime-100 rounded-t-xl border-b-[1px] border-gray-300"
+            >
+               <div class="w-full flex justify-between">
+                  <h1 class="text-2xl font-extrabold text-prime-300">
+                     Steam Reviews Scraper
+                  </h1>
+                  <div class="flex flex-row gap-2">
+                     <i class="fas fa-circle-info text-2xl text-prime-300
+                     cursor-pointer hover:scale-[1.2] duration-200"></i>
+                     <i class="fas fa-circle-question text-2xl text-prime-300
+                     cursor-pointer hover:scale-[1.2] duration-200"></i>
+                  </div>
+               </div>
+               <div class="w-full flex flex-row gap-4">
+                  <div class="w-full mt-4">
+                     <input
+                        id="steamLink"
+                        type="text"
+                        class="w-full min-w-[300px] p-2 rounded-lg border-2 border-prime-200
+                        focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
+                        placeholder="Enter url : https://steamcommunity.com/app/730/reviews/?filterLanguage=all&p=1&browsefilter=mostrecent"
+                        value=""
+                     />
+                  </div>
+
+                  <button
+                  id="startBtn"
+                  onclick="startScraping()"
+                  class="px-4  mt-4 w-[180px] flex justify-center items-center rounded-full
+                  bg-prime-200 text-white text-xl font-semibold">
+                     Start
+                  </button>
+               </div>
+               <div class="w-full flex justify-between">
+                  <div class="mt-4 w-full flex flex-row gap-4">
+                     <!-- limit -->
+                     <div class=" flex flex-col justify-start">
+                        <label class="ml-1 text-prime-300 text-md" for="Limit">Limit</label>
+                        <div class="flex mt-1">
+                           <button onclick="minusLimit()"
+                           class="min-w-fit px-3 rounded-md rounded-r-none flex justify-center items-center
+                           bg-prime-200 text-white text-md ">
+                              <i class="fa-solid fa-minus"></i>
+                           </button>
+                           <input
+                              id="limit"
+                              type="number"
+                              min="0"
+                              max="10000"
+                              step="100"
+                              class="text-center p-2
+                              rounded-lg rounded-r-none rounded-l-none border-2 border-x-0 border-prime-200
+                              focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
+                              value="100"
+                              readonly
+                           />
+                           <button onclick="plusLimit()"
+                           class="min-w-fit px-3 rounded-md rounded-l-none flex justify-center items-center
+                           bg-prime-200 text-white text-md  ">
+                           <i class="fa-solid fa-plus"></i>
+                           </button>
+                        </div>
+                     </div>
+                     <!-- sim -->
+                     <div class="w-auto flex flex-col ml-10 ">
+                        <label class="ml-1 text-prime-300 text-md" for="simulate">Simulate</label>
+                        <select name="simulate" id="simulate" value="off"
+                        class="p-2 mt-1 rounded-lg border-2 border-prime-200 w-[140px]
+                        focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
+                        >
+                        <option value="off" >-- OFF --</option>
+                           <option value="on">-- ON --</option>
+                        </select>
+                     </div>
+                  </div>
+                  <!-- <div class="mt-4 flex flex-row gap-2 ">
+                     <div class="pt-7">
+                        <button
+                        disabled
+                        class="px-4 w-[230px] h-full flex justify-center items-center rounded-lg
+                        bg-prime-300 text-gray-100 text-xl font-semibold gap-4">
+                        <i class="fas fa-file-csv text-2xl text-white"></i>
+                        <span>
+                           Export to CSV
+                        </span>
+                        </button>
+                     </div>
+                  </div> -->
+               </div>
+            </div>
+         </div>
+         <!-- reviews list -->
+         <div class="w-full h-full px-8 bg-gray-200">
+            <div class="w-full min-h-[calc(100vh-260px)] bg-white">
+               <div class="w-full h-full px-8 py-4 flex flex-col gap-2 min-h-[calc(100vh-260px)]">
+                  <div class="w-full h-full flex flex-col justify-center items-center min-h-[calc(100vh-260px)]">
+                     <p id="reviewsCounter" class="text-6xl text-prime-200"></p>
+                     <div class="w-full h-full loader mt-4"></div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </body>
+
+   <script src="/socket.io/socket.io.js"></script>
+   <script>
+
+      const socket = io();
+      let start = false
+      let loading = false
+
+      const reviewsCounterEl = document.getElementById('reviewsCounter')
+      const inputEl = document.getElementById('steamLink')
+      const startBtnEl = document.getElementById('startBtn')
+      const simulateEl = document.getElementById('simulate')
+      const limitEl = document.getElementById('limit')
+
+      socket.on('reload', ()=> {
+         location.reload();
+      })
+
+      socket.on('scraping complete', (msg)=>{
+         alert(msg)
+         toggleBtn()
+      })
+
+      let reviewsData = []
+      socket.on('data recieve', (data)=>{
+         reviewsData.push(data)
+         console.log(reviewsData.length ,': ',data.name);
+         if(reviewsCounterEl){
+            reviewsCounterEl.textContent = `${reviewsData.length}`
+         }
+      })
+
+
+
+
+      function startScraping(){
+
+
+
+         if(start === false){
+            if(!(inputEl.value.startsWith('https://steamcommunity.com/app/') && inputEl.value.includes('/reviews/'))){
+               alert(`Invalid URL`)
+            }else{
+               toggleBtn()
+               let params = {
+                  steamUrl: inputEl.value ,
+                  headless: (simulateEl.value == 'on') ?false : true ,
+                  limit: limitEl.value
+               }
+               socket.emit('start scraping',params)
+            }
+         }else {
+            socket.emit('cancel scraping','cancel scraping!!')
+            toggleBtn()
+         }
+      }
+
+      function toggleBtn(){
+         if(start === false){
+            start = true
+            loading = true
+            startBtnEl.classList.remove('bg-prime-200')
+            startBtnEl.classList.add('bg-red-500')
+            startBtnEl.innerText = 'Stop'
+         }else{
+            start = false
+            loading = false
+            startBtnEl.classList.remove('bg-red-500')
+            startBtnEl.classList.add('bg-prime-200')
+            startBtnEl.innerText = 'Start'
+         }
+      }
+
+      function plusLimit(){
+         limitEl.value = parseInt(limitEl.value) + 100;
+      }
+
+      function minusLimit(){
+         limitEl.value = parseInt(limitEl.value) - 100;
+      }
+   </script>
+</html>
