@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import http from 'http';
 import { Server } from 'socket.io';
-import scraping from './services/scraping';
+import scraper from './services/scraper';
 import indexChange from './utils/indexChange';
 import { Socket } from 'socket.io';
 import { ScraperParams } from './model/reviews';
@@ -18,7 +18,7 @@ io.on('connection', (socket:Socket) => {
 
    socket.on('start scraping', (params:ScraperParams) => {
       console.log('start scraping');
-      scraping(socket, params);
+      scraper(socket, params);
    });
 
    socket.on('disconnect', () => {
@@ -35,7 +35,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-indexChange(io)
+// page reload for development
+// indexChange(io)
 
 // end point
 app.get('/', (req, res) => {
