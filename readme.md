@@ -3,11 +3,10 @@
       Steam Reviews Scraper
    </h1>
    <p>
-    This project is to learn how to use socket.io and puppeteer for scraping data (Steam game reviews).
+    This project is created to learn how to use socket.io and Puppeteer for scraping data (game reviews on Steam).
    </p>
-   <img src="public/demo.gif">
+   <img src="public/demo.gif" width="70%">
 </div>
-
 <br>
 
 <div align="center">
@@ -20,4 +19,20 @@
    <code><img width="80" color="white" src="https://socket.io/images/logo.svg" alt="Express" title="Express"/></code>
 	<code><img width="80" src="https://user-images.githubusercontent.com/25181517/202896760-337261ed-ee92-4979-84c4-d4b829c7355d.png" alt="Tailwind CSS" title="Tailwind CSS"/></code>
 </div>
+<br>
+
+<div align="center">
+   <h1>
+      Setup
+   </h>
+</div>
+
+```shell
+yarn add ##install dependencies
+yarn dev ##start project on localhost:3001
+
+yarn build:css ##In case CSS does not display or postinstall does not work.
+```
+ 
+
 
