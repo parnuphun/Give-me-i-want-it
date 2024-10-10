@@ -29,6 +29,11 @@ let noMoreData: boolean = false // สำหรับเช็คสถานะ
 export default async function scraping(socket:Socket , params:ScraperParams) {
    socket.setMaxListeners(Number(params.limit));
 
+   socket.on('cancel scraping' ,(msg)=>{
+      console.log(msg);
+      socketCancelEvent = true
+   })
+
    const url: string = params.steamUrl
    let limit: number = params.limit
    const timeout: number = 10000;
@@ -44,7 +49,8 @@ export default async function scraping(socket:Socket , params:ScraperParams) {
       await page.setViewport({ width: 1080, height: 1024 });
 
       page.on("close", () => {
-         if(noMoreData === false){
+         if(noMoreData === true){
+            console.log('complete event : page close');
             ScrapingSuccess(socket,'Scraping is complete.')
          }
          noMoreData = false
@@ -123,6 +129,16 @@ export default async function scraping(socket:Socket , params:ScraperParams) {
                      break;
                   }
 
+                  if(socketCancelEvent === true){
+                     // user = totalUserInRow+1
+                     // row = totalRowsInPage+1
+                     socketCancelEvent = false
+
+                     console.log('complete event : socketCancelEvent === true');
+                     await ScrapingSuccess(socket,'Scraping Complete!')
+                     return
+                  }
+
                } catch (err) {
                   console.error(err);
                   break;
@@ -133,15 +149,17 @@ export default async function scraping(socket:Socket , params:ScraperParams) {
 
          // beak checker
          // cancel event from client
-         socket.on('cancel scraping' ,(msg)=>{
-            console.log(msg);
-            socketCancelEvent = true
-         })
-
-         if(socketCancelEvent || (userCount-1) >= limit){
-            socket.removeAllListeners('cancel scraping');
+         if((userCount-1) >= limit){
+            console.log('Beak Event : userCount > limit');
+            await ScrapingSuccess(socket,'Scarping Complate.')
             break
          }
+
+         // if(socketCancelEvent === true ){;
+         //    console.log('Beak Event : Socket Cancle ');
+         //    socket.removeAllListeners('cancel scraping');
+         //    break
+         // }
 
          // ฟังก์ชันสำหรับการเลื่อนหน้าจอลง ถ้าไม่มีหน้าต่อไปให้เลื่อนลงจนหมดเวลาก็ให้หยุดทำงาน
          let previousHeight: any = await page.evaluate("document.body.scrollHeight");
@@ -150,6 +168,7 @@ export default async function scraping(socket:Socket , params:ScraperParams) {
             await waitForNewContent(previousHeight, page, timeout);
          } catch (error) {
             noMoreData = true
+            console.log('complete event : scroll out ');
             ScrapingSuccess(socket,'There is no data left to scrape. Scraping is complete.')
             socket.removeAllListeners('cancel scraping');
             break
@@ -262,8 +281,14 @@ async function btnGate(page:Page){
 }
 
 async function ScrapingSuccess(socket:Socket,msg:string) {
+   reset()
+   socket.emit('scraping complete',msg)
+}
+
+async function reset() {
+   socketCancelEvent = false
+   noMoreData = false
    currentPage = 1
    userCount = 1
    reviewsData = []
-   socket.emit('scraping complete',msg)
 }
