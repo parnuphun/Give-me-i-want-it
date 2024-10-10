@@ -17,7 +17,7 @@
 </div>
 
 ```shell
-yarn add ##install dependencies
+yarn install ##install dependencies
 yarn dev ##start project on localhost:3001
 
 yarn build:css ##if CSS does not display or postinstall does not work.
