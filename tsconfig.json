@@ -1,0 +1,18 @@
+{
+   "compilerOptions": {
+      "module": "CommonJS", // compile to common js
+      "outDir": "./dist",
+      "rootDir": "./src",
+      "target": "es6",
+      "skipLibCheck": false, // check declaration files (@type)
+      "forceConsistentCasingInFileNames": true, // check uppercase and lowercase letter for reference files
+      "esModuleInterop": true
+   },
+   "include": [
+      "src/**/*.ts"
+   ],
+   "exclude": [
+      "node_modules",
+      "dist"
+   ],
+}

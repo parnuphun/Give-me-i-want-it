@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Scraping Steam Reviews</title>
+
+      <!-- css -->
+      <link href="/css/style.css" rel="stylesheet" />
+      <link href="/css/global.css" rel="stylesheet" />
+
+      <!-- font awesome -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+      <!-- sweet alert -->
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+   </head>
+   <body>
+      <div class="w-full flex flex-col min-h-screen max-w-screen h-full bg-gray-200">
+         <div class="w-full h-[260px] pt-8 px-8 bg-prime-200">
+            <div
+               class="w-full h-full pt-8 py-4 px-8 flex flex-col bg-prime-100 rounded-t-xl border-b-[1px] border-gray-300"
+            >
+               <div class="w-full flex justify-between">
+                  <h1 class="text-2xl font-extrabold text-prime-300">
+                     Steam Reviews Scraper
+                  </h1>
+                  <div class="flex flex-row gap-2">
+                     <!-- <i class="fas fa-circle-info text-2xl text-prime-300
+                     cursor-pointer hover:scale-[1.2] duration-200"></i>
+                     <i class="fas fa-circle-question text-2xl text-prime-300
+                     cursor-pointer hover:scale-[1.2] duration-200"></i> -->
+                  </div>
+               </div>
+               <div class="w-full flex flex-row gap-4">
+                  <div class="w-full mt-4">
+                     <input
+                        id="steamLink"
+                        type="text"
+                        class="w-full min-w-[300px] p-2 rounded-lg border-2 border-prime-200
+                        focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
+                        placeholder="Enter url : https://steamcommunity.com/app/730/reviews/?filterLanguage=all&p=1&browsefilter=mostrecent"
+                        value=""
+                     />
+                  </div>
+
+                  <button
+                  id="startBtn"
+                  onclick="startScraping()"
+                  class="px-4  mt-4 w-[180px] flex justify-center items-center rounded-full
+                  bg-prime-200 text-white text-xl font-semibold">
+                     Start
+                  </button>
+               </div>
+               <div class="w-full flex justify-between">
+                  <div class="mt-4 w-full flex flex-row gap-4">
+                     <!-- limit -->
+                     <div class=" flex flex-col justify-start">
+                        <label class="ml-1 text-prime-300 text-md" for="Limit">Limit</label>
+                        <div class="flex mt-1">
+                           <button onclick="minusLimit()"
+                           class="min-w-fit px-3 rounded-md rounded-r-none flex justify-center items-center
+                           bg-prime-200 text-white text-md ">
+                              <i class="fa-solid fa-minus"></i>
+                           </button>
+                           <input
+                              id="limit"
+                              type="number"
+                              min="0"
+                              max="10000"
+                              step="100"
+                              class="text-center p-2
+                              rounded-lg rounded-r-none rounded-l-none border-2 border-x-0 border-prime-200
+                              focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
+                              value="100"
+                              readonly
+                           />
+                           <button onclick="plusLimit()"
+                           class="min-w-fit px-3 rounded-md rounded-l-none flex justify-center items-center
+                           bg-prime-200 text-white text-md  ">
+                           <i class="fa-solid fa-plus"></i>
+                           </button>
+                        </div>
+                     </div>
+                     <!-- sim -->
+                     <div class="w-auto flex flex-col ml-4 ">
+                        <label class="ml-1 text-prime-300 text-md" for="simulate">Simulate</label>
+                        <select name="simulate" id="simulate" value="off"
+                        class="p-2 mt-1 rounded-lg border-2 border-prime-200 w-[140px]
+                        focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
+                        >
+                        <option value="off" >-- OFF --</option>
+                           <option value="on">-- ON --</option>
+                        </select>
+                     </div>
+                  </div>
+                  <div class="mt-4 flex flex-row gap-2 ">
+                     <div class="pt-7">
+                        <!-- <button
+                        disabled
+                        class="px-4 w-[230px] h-full flex justify-center items-center rounded-lg
+                        bg-green-500 hover:bg-green-600 text-gray-100 text-xl font-semibold
+                        gap-4 cursor-pointer duration-200">
+                        <i class="fas fa-file-csv text-2xl text-white"></i>
+                        <span>
+                           Export to CSV
+                        </span>
+                        </button> -->
+                     </div>
+                     <div class="pt-7">
+                        <button
+                        onclick="deleteAllReviewsEl(true)"
+                        class="px-4 w-[180px] h-full flex justify-center items-center rounded-lg
+                        bg-red-500 hover:bg-red-600 text-gray-100 text-xl font-semibold
+                        gap-4 cursor-pointer duration-200">
+                        <i class="fas fa-trash text-2xl text-white"></i>
+                        <span>
+                           Delete All
+                        </span>
+                        </button>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <!-- reviews list -->
+         <div class="w-full h-full px-8 bg-gray-200">
+            <div class="w-full min-h-[calc(100vh-260px)] bg-white">
+               <div class="w-full h-full px-8 py-4 flex flex-col gap-2 min-h-[calc(100vh-260px)]">
+                  <p id="reviewsCounter" class="text-3xl text-prime-300">
+                     0 reviews
+                  </p>
+                  <div id="reviews-section"
+                  class="w-full h-full flex flex-col  gap-4 min-h-[calc(100vh-260px)]">
+
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </body>
+
+   <script src="/socket.io/socket.io.js"></script>
+   <script>
+
+      const socket = io();
+      let start = false
+      let loading = false
+
+      const reviewsCounterEl = document.getElementById('reviewsCounter')
+      const inputEl = document.getElementById('steamLink')
+      const startBtnEl = document.getElementById('startBtn')
+      const simulateEl = document.getElementById('simulate')
+      const limitEl = document.getElementById('limit')
+
+      socket.on('reload', ()=> {
+         location.reload();
+      })
+
+      socket.on('scraping complete', (msg)=>{
+         swal.fire({
+            title: 'Complete' ,
+            text: msg,
+            icon:'success',
+            showConfirmButton: false ,
+            timer: 7000 ,
+            timerProgressBar:true ,
+         })
+          toggleBtn()
+      })
+
+      let reviewsData = []
+      socket.on('data recieve', (data)=>{
+         reviewsData.push(data)
+         console.log(reviewsData.length ,': ',data.name);
+         createReviewElement(data);
+         if(reviewsCounterEl){
+            reviewsCounterEl.textContent = `${reviewsData.length} reviews`
+         }
+      })
+
+      function startScraping(){
+         if(start === false){
+            if(!(inputEl.value.startsWith('https://steamcommunity.com/app/') && inputEl.value.includes('/reviews/'))){
+               swal.fire({
+                  title: 'Invalid URL' ,
+                  text: 'URL shold start at "https://steamcommunity.com/app/" and Include "/reviews/" ',
+                  icon:'error',
+                  showConfirmButton: false ,
+                  timer: 7000 ,
+                  timerProgressBar:true ,
+               })
+            }else{
+               toggleBtn()
+               deleteAllReviewsEl(false)
+               let params = {
+                  steamUrl: inputEl.value ,
+                  headless: (simulateEl.value == 'on') ?false : true ,
+                  limit: limitEl.value
+               }
+               socket.emit('start scraping',params)
+            }
+         }else {
+            socket.emit('cancel scraping','cancel scraping!!')
+         }
+      }
+
+      function toggleBtn(){
+         if(start === false){
+            // starting set to red (cancle)
+            console.log( ' starting ');
+            start = true
+            loading = true
+            startBtnEl.classList.remove('bg-prime-200')
+            startBtnEl.classList.add('bg-red-500')
+            startBtnEl.innerText = 'Stop'
+         }else if(start === true){
+            // complete set to prime
+            console.log(' complete ');
+            start = false
+            loading = false
+            startBtnEl.classList.remove('bg-red-500')
+            startBtnEl.classList.add('bg-prime-200')
+            startBtnEl.innerText = 'Start'
+         }
+      }
+
+      function plusLimit(){
+         limitEl.value = parseInt(limitEl.value) + 100;
+      }
+
+      function minusLimit(){
+         limitEl.value = parseInt(limitEl.value) - 100;
+      }
+
+      // create element
+      function createReviewElement(review) {
+         // main dev
+         const reviewContainer = document.createElement('div');
+         reviewContainer.classList.add('w-full', 'p-6', 'flex', 'flex-row', 'bg-prime-100', 'shadow-xl' , 'text-prime-300', 'rounded-2xl', 'fade-in'); // เพิ่ม class fade-in เพื่อให้มี animation
+
+         // img and vote
+         const imageContainer = document.createElement('div');
+         imageContainer.classList.add('relative', 'mr-4', 'h-[100px]', 'w-[100px]', 'min-w-[100px]', 'max-w-[100px]', 'rounded-lg', 'border-2', 'border-gray-500');
+
+         const imgElement = document.createElement('img');
+         imgElement.src = review.img;
+         imgElement.alt = 'user';
+         imgElement.classList.add('w-full', 'h-full', 'rounded-lg', 'object-cover');
+         imgElement.id = 'img';
+
+         const voteContainer = document.createElement('div');
+         if(review.vote == 'thumpsUp') voteContainer.classList.add('absolute', 'bg-green-500', '-bottom-3', '-right-3', 'rounded-md', 'p-2', 'z-20');
+         else voteContainer.classList.add('absolute', 'bg-red-500', '-bottom-3', '-right-3', 'rounded-md', 'p-2', 'z-20');
+
+         const voteIcon = document.createElement('i');
+         if(review.vote == 'thumpsUp') voteIcon.classList.add('fa', 'fa-thumbs-up', 'text-2xl', 'text-white');
+         else voteIcon.classList.add('fa', 'fa-thumbs-down', 'text-2xl', 'text-white');
+         voteIcon.id = 'vote';
+
+         voteContainer.appendChild(voteIcon);
+
+         imageContainer.appendChild(imgElement);
+         imageContainer.appendChild(voteContainer);
+
+         const contentContainer = document.createElement('div');
+         contentContainer.classList.add('w-full', 'flex', 'flex-col');
+
+         const userInfoContainer = document.createElement('div');
+         userInfoContainer.classList.add('w-full', 'text-prime-300');
+
+         const usernameElement = document.createElement('span');
+         usernameElement.textContent = review.name;
+         usernameElement.classList.add('font-bold');
+         usernameElement.id = 'username';
+
+         const dateElement = document.createElement('span');
+         dateElement.classList.add('ml-2');
+         dateElement.textContent = review.date;
+         dateElement.id = 'date';
+
+         const hrElement = document.createElement('hr');
+         hrElement.classList.add('mt-4', 'mb-4');
+
+         userInfoContainer.appendChild(usernameElement);
+         userInfoContainer.appendChild(dateElement);
+         userInfoContainer.appendChild(hrElement);
+
+         const reviewContainerText = document.createElement('div');
+         reviewContainerText.classList.add('w-full', 'pl-3');
+
+         const reviewText = document.createElement('p');
+         reviewText.textContent = review.review;
+         reviewText.classList.add('text-md', 'font-extralight');
+         reviewText.id = 'review';
+
+         reviewContainerText.appendChild(reviewText);
+
+         contentContainer.appendChild(userInfoContainer);
+         contentContainer.appendChild(reviewContainerText);
+
+         reviewContainer.appendChild(imageContainer);
+         reviewContainer.appendChild(contentContainer);
+
+         const reviewsSection = document.getElementById('reviews-section');
+         reviewsSection.appendChild(reviewContainer);
+
+         setTimeout(() => {
+            reviewContainer.classList.remove('fade-in');
+         }, 1000);
+      }
+
+      // delete all element
+      function deleteAllReviewsEl(confirmed) {
+         if(confirmed == true){
+            Swal.fire({
+               title: "Do you want delete all reviews ?",
+               showDenyButton: false,
+               showCancelButton: true,
+               confirmButtonText: "Yes!",
+               denyButtonText: `cancle`,
+               confirmButtonColor:'#4338CA'
+            }).then((result) => {
+               /* Read more about isConfirmed, isDenied below */
+               if(result.isConfirmed) {
+                  reviewsData = []
+                  reviewsCounterEl.textContent = `0 reviews`
+                  const reviewsSection = document.getElementById('reviews-section');
+                  reviewsSection.innerHTML = '';
+                  swal.fire({
+                     title: 'Deleted' ,
+                     icon:'success',
+                     showConfirmButton: false ,
+                     timer: 7000 ,
+                     timerProgressBar:true ,
+                  })
+               }
+            });
+         }else{
+            reviewsData = []
+            reviewsCounterEl.textContent = `0 reviews`
+            const reviewsSection = document.getElementById('reviews-section');
+            reviewsSection.innerHTML = '';
+         }
+      }
+
+
+   </script>
+</html>
