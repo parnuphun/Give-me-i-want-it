@@ -22,7 +22,7 @@ let reviewsData: Review[] = [];
 let templateCaseName: SteamCards = "twoSmall"; // สำหรับเช็ค template แต่ละอันของแต่ละแถว checktemplate()
 let userStatus: UserStatus = "online"; // สำหรับเช็คสถานะผู้ใช้งานในการ์ดแต่ละใบด้วยฟังก์ชัน checkUserStatus() ใช้สำหรับดึงรูปภาพ
 let userCount: number = 1;
-let socketCancelEvent: boolean = false // สำหรับการหยุดลูปเมื่อมีการกดยกเลิกมาจากทางฝั่ง client
+let socketCancelEvent: boolean = false; // สำหรับการหยุดลูปเมื่อมีการกดยกเลิกมาจากทางฝั่ง client
 let noMoreData: boolean = false // สำหรับเช็คสถานะการปล่อย event success ของ scroll bar
 
 
@@ -33,7 +33,6 @@ export default async function scraping(socket:Socket , params:ScraperParams) {
    let limit: number = params.limit
    const timeout: number = 10000;
    try {
-
       // เปิด chromium ถ้าตั้ง headless = false
       const browser = await puppeteer.launch({
          headless: params.headless,
@@ -59,9 +58,11 @@ export default async function scraping(socket:Socket , params:ScraperParams) {
          const totalRowsInPage = await getTotalRowsInPage(page);
          for (let row = 1; row <= totalRowsInPage; row++) {
             // ดึงจำนวนผู้ใช้งานในแถวนั้นๆ
+
             if((userCount-1) >= limit){
                break
             }
+
             const totalUserInRow = await checkTemplate(page, row);
             for (let user = 1; user <= totalUserInRow; user++) {
                let review: Review = {
@@ -95,10 +96,10 @@ export default async function scraping(socket:Socket , params:ScraperParams) {
                         // โดยการลบ div ที่มี class `date_posted` ออกไปเพื่อเอารีวิวด้านหลัง
                         let datePosted = el.querySelector('.date_posted');
                         if (datePosted) {
-                            datePosted.remove();
+                              datePosted.remove();
                         }
                         return el.textContent.trim();
-                    },waitReviewSL
+                     },waitReviewSL
                   );
                   review.review = reviewText;
 
@@ -117,15 +118,17 @@ export default async function scraping(socket:Socket , params:ScraperParams) {
 
                   socket.emit('data recieve',review)
                   userCount++;
+
                   if((userCount-1) >= limit){
-                     break
+                     break;
                   }
+
                } catch (err) {
                   console.error(err);
-
                   break;
                }
             }
+
          }
 
          // beak checker
@@ -259,7 +262,8 @@ async function btnGate(page:Page){
 }
 
 async function ScrapingSuccess(socket:Socket,msg:string) {
-   userCount = 1;
+   currentPage = 1
+   userCount = 1
    reviewsData = []
    socket.emit('scraping complete',msg)
 }

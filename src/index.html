@@ -8,8 +8,12 @@
       <!-- css -->
       <link href="/css/style.css" rel="stylesheet" />
       <link href="/css/global.css" rel="stylesheet" />
+
       <!-- font awesome -->
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+      <!-- sweet alert -->
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
    </head>
    <body>
@@ -20,7 +24,7 @@
             >
                <div class="w-full flex justify-between">
                   <h1 class="text-2xl font-extrabold text-prime-300">
-                     Scraping Steam Reviews
+                     Steam Reviews Scraper
                   </h1>
                   <div class="flex flex-row gap-2">
                      <i class="fas fa-circle-info text-2xl text-prime-300
@@ -32,7 +36,7 @@
                <div class="w-full flex flex-row gap-4">
                   <div class="w-full mt-4">
                      <input
-                        id=""
+                        id="steamLink"
                         type="text"
                         class="w-full min-w-[300px] p-2 rounded-lg border-2 border-prime-200
                         focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
@@ -41,32 +45,54 @@
                      />
                   </div>
 
-                  <button class="px-4  mt-4 w-[180px] flex justify-center items-center rounded-full
+                  <button
+                  id="startBtn"
+                  onclick="startScraping()"
+                  class="px-4  mt-4 w-[180px] flex justify-center items-center rounded-full
                   bg-prime-200 text-white text-xl font-semibold">
                      Start
                   </button>
                </div>
                <div class="w-full flex justify-between">
-                  <div class="mt-4 flex flex-row gap-4">
-                     <div class="w-full flex flex-col ">
+                  <div class="mt-4 w-full flex flex-row gap-4">
+                     <!-- limit -->
+                     <div class=" flex flex-col justify-start">
+                        <label class="ml-1 text-prime-300 text-md" for="Limit">Limit</label>
+                        <div class="flex mt-1">
+                           <button onclick="minusLimit()"
+                           class="min-w-fit px-3 rounded-md rounded-r-none flex justify-center items-center
+                           bg-prime-200 text-white text-md ">
+                              <i class="fa-solid fa-minus"></i>
+                           </button>
+                           <input
+                              id="limit"
+                              type="number"
+                              min="0"
+                              max="10000"
+                              step="100"
+                              class="text-center p-2
+                              rounded-lg rounded-r-none rounded-l-none border-2 border-x-0 border-prime-200
+                              focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
+                              value="100"
+                              readonly
+                           />
+                           <button onclick="plusLimit()"
+                           class="min-w-fit px-3 rounded-md rounded-l-none flex justify-center items-center
+                           bg-prime-200 text-white text-md  ">
+                           <i class="fa-solid fa-plus"></i>
+                           </button>
+                        </div>
+                     </div>
+                     <!-- sim -->
+                     <div class="w-auto flex flex-col ml-4 ">
                         <label class="ml-1 text-prime-300 text-md" for="simulate">Simulate</label>
-                        <select name="simulate" id="simulate"
-                        class="p-2 mt-1 rounded-lg border-2 border-prime-200 w-[100px]
+                        <select name="simulate" id="simulate" value="off"
+                        class="p-2 mt-1 rounded-lg border-2 border-prime-200 w-[140px]
                         focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
                         >
-                           <option value="">ON</option>
-                           <option value="">OFF</option>
+                        <option value="off" >-- OFF --</option>
+                           <option value="on">-- ON --</option>
                         </select>
-                     </div>
-                     <div class="w-full flex flex-col">
-                        <label class="ml-1 text-prime-300 text-md" for="Limit">Limit</label>
-                        <input
-                        id="Limit"
-                        type="number"
-                        class="w-[100px] mt-1 p-2 rounded-lg border-2 border-prime-200
-                        focus:bg-gray-100 focus:ring focus:ring-violet-300 focus:outline-none focus:border-prime-200"
-                        value="10"
-                     />
                      </div>
                   </div>
                   <div class="mt-4 flex flex-row gap-2 ">
@@ -85,10 +111,17 @@
                </div>
             </div>
          </div>
+         <!-- reviews list -->
          <div class="w-full h-full px-8 bg-gray-200">
             <div class="w-full min-h-[calc(100vh-260px)] bg-white">
-               <div id="reviews-section" class="w-full h-full px-8 py-4 flex flex-col gap-2 ">
+               <div class="w-full h-full px-8 py-4 flex flex-col gap-2 min-h-[calc(100vh-260px)]">
+                  <p id="reviewsCounter" class="text-3xl text-prime-300">
+                     0 reviews
+                  </p>
+                  <div id="reviews-section"
+                  class="w-full h-full flex flex-col  gap-4 min-h-[calc(100vh-260px)]">
 
+                  </div>
                </div>
             </div>
          </div>
@@ -97,26 +130,100 @@
 
    <script src="/socket.io/socket.io.js"></script>
    <script>
+
       const socket = io();
-      socket.on('reload', function() {
+      let start = false
+      let loading = false
+
+      const reviewsCounterEl = document.getElementById('reviewsCounter')
+      const inputEl = document.getElementById('steamLink')
+      const startBtnEl = document.getElementById('startBtn')
+      const simulateEl = document.getElementById('simulate')
+      const limitEl = document.getElementById('limit')
+
+      socket.on('reload', ()=> {
          location.reload();
+      })
+
+      socket.on('scraping complete', (msg)=>{
+         swal.fire({
+                title: 'Complete' ,
+                text: msg,
+                icon:'success',
+                showConfirmButton: false ,
+                timer: 7000 ,
+                timerProgressBar:true ,
+            })
+         toggleBtn()
       })
 
       let reviewsData = []
       socket.on('data recieve', (data)=>{
          reviewsData.push(data)
-         // console.log(data);
-
+         console.log(reviewsData.length ,': ',data.name);
          createReviewElement(data);
+         if(reviewsCounterEl){
+            reviewsCounterEl.textContent = `${reviewsData.length} reviews`
+         }
       })
 
-      // ฟังก์ชันสร้าง element ใหม่
-      function createReviewElement(review) {
-         // สร้าง div หลักที่จะเก็บข้อมูลทั้งหมด
-         const reviewContainer = document.createElement('div');
-         reviewContainer.classList.add('w-full', 'p-6', 'flex', 'flex-row', 'bg-prime-300', 'text-white', 'rounded-2xl', 'fade-in'); // เพิ่ม class fade-in เพื่อให้มี animation
+      function startScraping(){
+         if(start === false){
+            if(!(inputEl.value.startsWith('https://steamcommunity.com/app/') && inputEl.value.includes('/reviews/'))){
+               swal.fire({
+                  title: 'Invalid URL' ,
+                  text: 'URL shold start at "https://steamcommunity.com/app/" and Include "/reviews/" ',
+                  icon:'error',
+                  showConfirmButton: false ,
+                  timer: 7000 ,
+                  timerProgressBar:true ,
+               })
+            }else{
+               toggleBtn()
+               let params = {
+                  steamUrl: inputEl.value ,
+                  headless: (simulateEl.value == 'on') ?false : true ,
+                  limit: limitEl.value
+               }
+               socket.emit('start scraping',params)
+            }
+         }else {
+            socket.emit('cancel scraping','cancel scraping!!')
+            toggleBtn()
+         }
+      }
 
-         // สร้าง element สำหรับรูปภาพและการโหวต
+      function toggleBtn(){
+         if(start === false){
+            start = true
+            loading = true
+            startBtnEl.classList.remove('bg-prime-200')
+            startBtnEl.classList.add('bg-red-500')
+            startBtnEl.innerText = 'Stop'
+         }else{
+            start = false
+            loading = false
+            startBtnEl.classList.remove('bg-red-500')
+            startBtnEl.classList.add('bg-prime-200')
+            startBtnEl.innerText = 'Start'
+         }
+      }
+
+      function plusLimit(){
+         limitEl.value = parseInt(limitEl.value) + 100;
+      }
+
+      function minusLimit(){
+         limitEl.value = parseInt(limitEl.value) - 100;
+      }
+
+      // create element
+      function createReviewElement(review) {
+         // main dev
+         const reviewContainer = document.createElement('div');
+         reviewContainer.classList.add('w-full', 'p-6', 'flex', 'flex-row', 'bg-prime-100', 'shadow-xl' , 'text-prime-300', 'rounded-2xl', 'fade-in'); // เพิ่ม class fade-in เพื่อให้มี animation
+
+         // img and vote
          const imageContainer = document.createElement('div');
          imageContainer.classList.add('relative', 'mr-4', 'h-[100px]', 'w-[100px]', 'min-w-[100px]', 'max-w-[100px]', 'rounded-lg', 'border-2', 'border-gray-500');
 
@@ -147,7 +254,7 @@
          contentContainer.classList.add('w-full', 'flex', 'flex-col');
 
          const userInfoContainer = document.createElement('div');
-         userInfoContainer.classList.add('w-full', 'text-white');
+         userInfoContainer.classList.add('w-full', 'text-prime-300');
 
          const usernameElement = document.createElement('span');
          usernameElement.textContent = review.name;

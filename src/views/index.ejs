@@ -8,8 +8,12 @@
       <!-- css -->
       <link href="/css/style.css" rel="stylesheet" />
       <link href="/css/global.css" rel="stylesheet" />
+
       <!-- font awesome -->
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+      <!-- sweet alert -->
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
    </head>
    <body>
@@ -80,7 +84,7 @@
                         </div>
                      </div>
                      <!-- sim -->
-                     <div class="w-auto flex flex-col ml-10 ">
+                     <div class="w-auto flex flex-col ml-4 ">
                         <label class="ml-1 text-prime-300 text-md" for="simulate">Simulate</label>
                         <select name="simulate" id="simulate" value="off"
                         class="p-2 mt-1 rounded-lg border-2 border-prime-200 w-[140px]
@@ -91,19 +95,32 @@
                         </select>
                      </div>
                   </div>
-                  <!-- <div class="mt-4 flex flex-row gap-2 ">
+                  <div class="mt-4 flex flex-row gap-2 ">
                      <div class="pt-7">
                         <button
                         disabled
                         class="px-4 w-[230px] h-full flex justify-center items-center rounded-lg
-                        bg-prime-300 text-gray-100 text-xl font-semibold gap-4">
+                        bg-green-500 hover:bg-green-600 text-gray-100 text-xl font-semibold
+                        gap-4 cursor-pointer duration-200">
                         <i class="fas fa-file-csv text-2xl text-white"></i>
                         <span>
                            Export to CSV
                         </span>
                         </button>
                      </div>
-                  </div> -->
+                     <div class="pt-7">
+                        <button
+                        disabled
+                        class="px-4 w-[180px] h-full flex justify-center items-center rounded-lg
+                        bg-red-500 hover:bg-red-600 text-gray-100 text-xl font-semibold
+                        gap-4 cursor-pointer duration-200">
+                        <i class="fas fa-trash text-2xl text-white"></i>
+                        <span>
+                           Delete All
+                        </span>
+                        </button>
+                     </div>
+                  </div>
                </div>
             </div>
          </div>
@@ -111,9 +128,12 @@
          <div class="w-full h-full px-8 bg-gray-200">
             <div class="w-full min-h-[calc(100vh-260px)] bg-white">
                <div class="w-full h-full px-8 py-4 flex flex-col gap-2 min-h-[calc(100vh-260px)]">
-                  <div class="w-full h-full flex flex-col justify-center items-center min-h-[calc(100vh-260px)]">
-                     <p id="reviewsCounter" class="text-6xl text-prime-200"></p>
-                     <div class="w-full h-full loader mt-4"></div>
+                  <p id="reviewsCounter" class="text-3xl text-prime-300">
+                     0 reviews
+                  </p>
+                  <div id="reviews-section"
+                  class="w-full h-full flex flex-col  gap-4 min-h-[calc(100vh-260px)]">
+
                   </div>
                </div>
             </div>
@@ -139,7 +159,14 @@
       })
 
       socket.on('scraping complete', (msg)=>{
-         alert(msg)
+         swal.fire({
+                title: 'Complete' ,
+                text: msg,
+                icon:'success',
+                showConfirmButton: false ,
+                timer: 7000 ,
+                timerProgressBar:true ,
+            })
          toggleBtn()
       })
 
@@ -147,21 +174,23 @@
       socket.on('data recieve', (data)=>{
          reviewsData.push(data)
          console.log(reviewsData.length ,': ',data.name);
+         createReviewElement(data);
          if(reviewsCounterEl){
-            reviewsCounterEl.textContent = `${reviewsData.length}`
+            reviewsCounterEl.textContent = `${reviewsData.length} reviews`
          }
       })
 
-
-
-
       function startScraping(){
-
-
-
          if(start === false){
             if(!(inputEl.value.startsWith('https://steamcommunity.com/app/') && inputEl.value.includes('/reviews/'))){
-               alert(`Invalid URL`)
+               swal.fire({
+                  title: 'Invalid URL' ,
+                  text: 'URL shold start at "https://steamcommunity.com/app/" and Include "/reviews/" ',
+                  icon:'error',
+                  showConfirmButton: false ,
+                  timer: 7000 ,
+                  timerProgressBar:true ,
+               })
             }else{
                toggleBtn()
                let params = {
@@ -199,6 +228,93 @@
 
       function minusLimit(){
          limitEl.value = parseInt(limitEl.value) - 100;
+      }
+
+      // create element
+      function createReviewElement(review) {
+         // main dev
+         const reviewContainer = document.createElement('div');
+         reviewContainer.classList.add('w-full', 'p-6', 'flex', 'flex-row', 'bg-prime-100', 'shadow-xl' , 'text-prime-300', 'rounded-2xl', 'fade-in'); // เพิ่ม class fade-in เพื่อให้มี animation
+
+         // img and vote
+         const imageContainer = document.createElement('div');
+         imageContainer.classList.add('relative', 'mr-4', 'h-[100px]', 'w-[100px]', 'min-w-[100px]', 'max-w-[100px]', 'rounded-lg', 'border-2', 'border-gray-500');
+
+         const imgElement = document.createElement('img');
+         imgElement.src = review.img;
+         imgElement.alt = 'user';
+         imgElement.classList.add('w-full', 'h-full', 'rounded-lg', 'object-cover');
+         imgElement.id = 'img';
+
+         const voteContainer = document.createElement('div');
+         if(review.vote == 'thumpsUp') voteContainer.classList.add('absolute', 'bg-green-500', '-bottom-3', '-right-3', 'rounded-md', 'p-2', 'z-20');
+         else voteContainer.classList.add('absolute', 'bg-red-500', '-bottom-3', '-right-3', 'rounded-md', 'p-2', 'z-20');
+
+         const voteIcon = document.createElement('i');
+         if(review.vote == 'thumpsUp') voteIcon.classList.add('fa', 'fa-thumbs-up', 'text-2xl', 'text-white');
+         else voteIcon.classList.add('fa', 'fa-thumbs-down', 'text-2xl', 'text-white');
+         voteIcon.id = 'vote';
+
+         // ใส่ไอคอนโหวตลงใน div
+         voteContainer.appendChild(voteIcon);
+
+         // ใส่รูปภาพและไอคอนโหวตลงใน div หลัก
+         imageContainer.appendChild(imgElement);
+         imageContainer.appendChild(voteContainer);
+
+         // สร้าง div สำหรับเนื้อหาส่วนข้อความ
+         const contentContainer = document.createElement('div');
+         contentContainer.classList.add('w-full', 'flex', 'flex-col');
+
+         const userInfoContainer = document.createElement('div');
+         userInfoContainer.classList.add('w-full', 'text-prime-300');
+
+         const usernameElement = document.createElement('span');
+         usernameElement.textContent = review.name;
+         usernameElement.classList.add('font-bold');
+         usernameElement.id = 'username';
+
+         const dateElement = document.createElement('span');
+         dateElement.classList.add('ml-2');
+         dateElement.textContent = review.date;
+         dateElement.id = 'date';
+
+         const hrElement = document.createElement('hr');
+         hrElement.classList.add('mt-4', 'mb-4');
+
+         // เพิ่มข้อมูลชื่อผู้ใช้และวันที่ลงใน div
+         userInfoContainer.appendChild(usernameElement);
+         userInfoContainer.appendChild(dateElement);
+         userInfoContainer.appendChild(hrElement);
+
+         // สร้าง div สำหรับข้อความ review
+         const reviewContainerText = document.createElement('div');
+         reviewContainerText.classList.add('w-full', 'pl-3');
+
+         const reviewText = document.createElement('p');
+         reviewText.textContent = review.review;
+         reviewText.classList.add('text-md', 'font-extralight');
+         reviewText.id = 'review';
+
+         // เพิ่มข้อความรีวิวลงใน div
+         reviewContainerText.appendChild(reviewText);
+
+         // รวมส่วนต่างๆ เข้าด้วยกัน
+         contentContainer.appendChild(userInfoContainer);
+         contentContainer.appendChild(reviewContainerText);
+
+         // ใส่ imageContainer และ contentContainer ลงใน reviewContainer หลัก
+         reviewContainer.appendChild(imageContainer);
+         reviewContainer.appendChild(contentContainer);
+
+         // append reviewContainer ใหม่ลงใน DOM ที่ต้องการ
+         const reviewsSection = document.getElementById('reviews-section'); // สมมติว่ามี div ที่ใช้เก็บ reviews ทั้งหมด
+         reviewsSection.appendChild(reviewContainer);
+
+         // เพิ่ม delay เพื่อให้แต่ละ element ปรากฏด้วย animation อย่างราบรื่น
+         setTimeout(() => {
+            reviewContainer.classList.remove('fade-in');
+         }, 1000); // ลบ class fade-in หลังจาก animation จบ
       }
    </script>
 </html>

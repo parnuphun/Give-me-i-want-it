@@ -35,8 +35,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-//
-// indexChange(io)
+indexChange(io)
 
 // end point
 app.get('/', (req, res) => {
