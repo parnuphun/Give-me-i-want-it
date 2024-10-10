@@ -5,7 +5,7 @@ import path from 'path';
 // detect index.html change
 export default function indexChange(io:Server){
 let timeout:any;
-fs.watch(path.join(__dirname, "../views/index.ejs"), (eventType, filename) => {
+fs.watch(path.join(__dirname, "../index.html"), (eventType, filename) => {
    if (eventType === 'change') {
       clearTimeout(timeout);
 

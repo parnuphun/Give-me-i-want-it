@@ -1,5 +1,5 @@
 import express from 'express';
-import path from 'path';
+import path, { dirname } from 'path';
 import http from 'http';
 import { Server } from 'socket.io';
 import scraper from './services/scraper';
@@ -26,10 +26,6 @@ io.on('connection', (socket:Socket) => {
    });
 });
 
-
-// template engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 // default use
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -40,7 +36,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // end point
 app.get('/', (req, res) => {
-   res.render('index')
+   // res.render('index')
+   res.sendFile(path.join(__dirname,'index.html'))
 });
 
 server.listen(port, () => {

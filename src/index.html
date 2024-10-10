@@ -27,10 +27,10 @@
                      Steam Reviews Scraper
                   </h1>
                   <div class="flex flex-row gap-2">
-                     <i class="fas fa-circle-info text-2xl text-prime-300
+                     <!-- <i class="fas fa-circle-info text-2xl text-prime-300
                      cursor-pointer hover:scale-[1.2] duration-200"></i>
                      <i class="fas fa-circle-question text-2xl text-prime-300
-                     cursor-pointer hover:scale-[1.2] duration-200"></i>
+                     cursor-pointer hover:scale-[1.2] duration-200"></i> -->
                   </div>
                </div>
                <div class="w-full flex flex-row gap-4">
@@ -97,13 +97,26 @@
                   </div>
                   <div class="mt-4 flex flex-row gap-2 ">
                      <div class="pt-7">
-                        <button
+                        <!-- <button
                         disabled
                         class="px-4 w-[230px] h-full flex justify-center items-center rounded-lg
-                        bg-prime-300 text-gray-100 text-xl font-semibold gap-4">
+                        bg-green-500 hover:bg-green-600 text-gray-100 text-xl font-semibold
+                        gap-4 cursor-pointer duration-200">
                         <i class="fas fa-file-csv text-2xl text-white"></i>
                         <span>
                            Export to CSV
+                        </span>
+                        </button> -->
+                     </div>
+                     <div class="pt-7">
+                        <button
+                        onclick="deleteAllReviewsEl(true)"
+                        class="px-4 w-[180px] h-full flex justify-center items-center rounded-lg
+                        bg-red-500 hover:bg-red-600 text-gray-100 text-xl font-semibold
+                        gap-4 cursor-pointer duration-200">
+                        <i class="fas fa-trash text-2xl text-white"></i>
+                        <span>
+                           Delete All
                         </span>
                         </button>
                      </div>
@@ -147,14 +160,14 @@
 
       socket.on('scraping complete', (msg)=>{
          swal.fire({
-                title: 'Complete' ,
-                text: msg,
-                icon:'success',
-                showConfirmButton: false ,
-                timer: 7000 ,
-                timerProgressBar:true ,
-            })
-         toggleBtn()
+            title: 'Complete' ,
+            text: msg,
+            icon:'success',
+            showConfirmButton: false ,
+            timer: 7000 ,
+            timerProgressBar:true ,
+         })
+          toggleBtn()
       })
 
       let reviewsData = []
@@ -180,6 +193,7 @@
                })
             }else{
                toggleBtn()
+               deleteAllReviewsEl(false)
                let params = {
                   steamUrl: inputEl.value ,
                   headless: (simulateEl.value == 'on') ?false : true ,
@@ -189,18 +203,21 @@
             }
          }else {
             socket.emit('cancel scraping','cancel scraping!!')
-            toggleBtn()
          }
       }
 
       function toggleBtn(){
          if(start === false){
+            // starting set to red (cancle)
+            console.log( ' starting ');
             start = true
             loading = true
             startBtnEl.classList.remove('bg-prime-200')
             startBtnEl.classList.add('bg-red-500')
             startBtnEl.innerText = 'Stop'
-         }else{
+         }else if(start === true){
+            // complete set to prime
+            console.log(' complete ');
             start = false
             loading = false
             startBtnEl.classList.remove('bg-red-500')
@@ -242,14 +259,11 @@
          else voteIcon.classList.add('fa', 'fa-thumbs-down', 'text-2xl', 'text-white');
          voteIcon.id = 'vote';
 
-         // ใส่ไอคอนโหวตลงใน div
          voteContainer.appendChild(voteIcon);
 
-         // ใส่รูปภาพและไอคอนโหวตลงใน div หลัก
          imageContainer.appendChild(imgElement);
          imageContainer.appendChild(voteContainer);
 
-         // สร้าง div สำหรับเนื้อหาส่วนข้อความ
          const contentContainer = document.createElement('div');
          contentContainer.classList.add('w-full', 'flex', 'flex-col');
 
@@ -269,12 +283,10 @@
          const hrElement = document.createElement('hr');
          hrElement.classList.add('mt-4', 'mb-4');
 
-         // เพิ่มข้อมูลชื่อผู้ใช้และวันที่ลงใน div
          userInfoContainer.appendChild(usernameElement);
          userInfoContainer.appendChild(dateElement);
          userInfoContainer.appendChild(hrElement);
 
-         // สร้าง div สำหรับข้อความ review
          const reviewContainerText = document.createElement('div');
          reviewContainerText.classList.add('w-full', 'pl-3');
 
@@ -283,25 +295,54 @@
          reviewText.classList.add('text-md', 'font-extralight');
          reviewText.id = 'review';
 
-         // เพิ่มข้อความรีวิวลงใน div
          reviewContainerText.appendChild(reviewText);
 
-         // รวมส่วนต่างๆ เข้าด้วยกัน
          contentContainer.appendChild(userInfoContainer);
          contentContainer.appendChild(reviewContainerText);
 
-         // ใส่ imageContainer และ contentContainer ลงใน reviewContainer หลัก
          reviewContainer.appendChild(imageContainer);
          reviewContainer.appendChild(contentContainer);
 
-         // append reviewContainer ใหม่ลงใน DOM ที่ต้องการ
-         const reviewsSection = document.getElementById('reviews-section'); // สมมติว่ามี div ที่ใช้เก็บ reviews ทั้งหมด
+         const reviewsSection = document.getElementById('reviews-section');
          reviewsSection.appendChild(reviewContainer);
 
-         // เพิ่ม delay เพื่อให้แต่ละ element ปรากฏด้วย animation อย่างราบรื่น
          setTimeout(() => {
             reviewContainer.classList.remove('fade-in');
-         }, 1000); // ลบ class fade-in หลังจาก animation จบ
+         }, 1000);
+      }
+
+      // delete all element
+      function deleteAllReviewsEl(confirmed) {
+         if(confirmed == true){
+            Swal.fire({
+               title: "Do you want delete all reviews ?",
+               showDenyButton: false,
+               showCancelButton: true,
+               confirmButtonText: "Yes!",
+               denyButtonText: `cancle`,
+               confirmButtonColor:'#4338CA'
+            }).then((result) => {
+               /* Read more about isConfirmed, isDenied below */
+               if(result.isConfirmed) {
+                  reviewsData = []
+                  reviewsCounterEl.textContent = `0 reviews`
+                  const reviewsSection = document.getElementById('reviews-section');
+                  reviewsSection.innerHTML = '';
+                  swal.fire({
+                     title: 'Deleted' ,
+                     icon:'success',
+                     showConfirmButton: false ,
+                     timer: 7000 ,
+                     timerProgressBar:true ,
+                  })
+               }
+            });
+         }else{
+            reviewsData = []
+            reviewsCounterEl.textContent = `0 reviews`
+            const reviewsSection = document.getElementById('reviews-section');
+            reviewsSection.innerHTML = '';
+         }
       }
    </script>
 </html>
