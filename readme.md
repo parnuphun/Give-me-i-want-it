@@ -22,7 +22,7 @@
 </div>
 <br>
 
-<div align="left">
+<div align="center">
    <h1>
       Installation
    </h>
